@@ -1,0 +1,60 @@
+# Eidolon 外壳验收用的批量 fixture（含 HERO / 非 HERO、覆盖、asset、runes）。
+format_version = 1
+out_dir = "out"
+jobs = 4
+antialias = false
+
+[[cards]]
+id = "HERO_01"
+hero_style = true
+armor = 5
+
+[[cards]]
+id = 8
+name = "测试名字"
+desc = """
+测试测试。
+第二行。
+"""
+classes = ["MAGE"]
+races = ["鱼人", "野兽"]
+cost = 3
+attack = 4
+health = 5
+cardtype = "MINION"
+rarity = "LEGENDARY"
+premium = "GOLDEN"
+cost_banner = "KABAL"
+elite = true
+outname = "yeti-custom.png"
+
+[[cards]]
+id = "CS2_029"
+classes = ["MAGE", "PALADIN"]
+cardtype = "SPELL"
+spell_school = "FIRE"
+outname = "fireball-dual.png"
+
+[[cards]]
+id = "CS2_112"
+classes = ["WARRIOR"]
+cardtype = "WEAPON"
+cost = 5
+attack = 5
+health = 2
+outname = "weapon.png"
+
+[[cards]]
+id = 105108
+bg_style = true
+tech_level = 3
+
+[cards.asset]
+portrait = "art/portrait.png"
+frame = "art/frame.png"
+watermark = "art/watermark.png"
+
+[[cards]]
+id = "RLK_000"
+runes = { BLOOD = 1, FROST = 2 }
+outname = "runes.png"

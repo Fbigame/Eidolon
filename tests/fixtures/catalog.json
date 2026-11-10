@@ -1,0 +1,48 @@
+{
+  "known_classes": [
+    "DEATHKNIGHT",
+    "DEMONHUNTER",
+    "DRUID",
+    "HUNTER",
+    "MAGE",
+    "NEUTRAL",
+    "PALADIN",
+    "PRIEST",
+    "ROGUE",
+    "SHAMAN",
+    "WARLOCK",
+    "WARRIOR"
+  ],
+  "known_cardtypes": [
+    "HERO",
+    "MINION",
+    "SPELL",
+    "WEAPON",
+    "LOCATION"
+  ],
+  "known_rarities": [
+    "FREE",
+    "COMMON",
+    "RARE",
+    "EPIC",
+    "LEGENDARY"
+  ],
+  "known_spell_schools": [
+    "ARCANE",
+    "FEL",
+    "FIRE",
+    "FROST",
+    "HOLY",
+    "NATURE",
+    "SHADOW"
+  ],
+  "cards": {
+    "HERO_01": {"cardtype": "HERO"},
+    "8": {"cardtype": "MINION"},
+    "CS2_182": {"cardtype": "MINION"},
+    "CS2_029": {"cardtype": "SPELL"},
+    "CS2_112": {"cardtype": "WEAPON"},
+    "105108": {"cardtype": "MINION"},
+    "RLK_000": {"cardtype": "MINION"}
+  }
+}

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eidolon"
+description = "Offline card renderer: render card PNGs from specs against a local game installation"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.13"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: Console",
+    "Topic :: Multimedia :: Graphics",
+]
+# core 渲染运行时依赖，钉版取自设计 §16.2（2026-11-08 全链对拍收口的版本组合）。
+# shell/contracts 只用标准库；这些依赖仅被 core / 组合层消费。
+dependencies = [
+    "unitypy==1.25.3",
+    "pillow==12.3.0",
+    "numpy==2.5.3",
+    "scipy==1.18.1",
+    "fonttools==4.66.1",
+    "freetype-py==2.5.1",
+    "texture2ddecoder==1.0.6",
+    "pythonnet==3.2.0; sys_platform == 'win32'",
+]
+dynamic = ["version"]
+
+[project.scripts]
+eidolon = "eidolon.entry:main"
+
+[tool.setuptools.dynamic]
+# 版本单源：eidolon/version.py（manifest 的 eidolon 字段同源）。
+version = {attr = "eidolon.version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["eidolon*"]

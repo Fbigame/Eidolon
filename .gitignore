@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv-release/
+.pytest_cache/
+
+# 产物 / 临时
+out/
+dist/
+.cache/
+
+# 私有面（不入库）
+_internal/
+
+# 构建产物 / 本地报告
+build/

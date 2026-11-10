@@ -1,0 +1,85 @@
+# Eidolon 批量输入示例（草案，字段面还在收敛）
+#
+# 规则：未填的字段走游戏数据；填了就是覆盖。
+# 卡级字段 = Card 的覆盖；[cards.asset] = 渲染期资源替换（不是 Card 字段）。
+# asset 路径是示意：实际必须指向存在的 PNG，否则 spec 会报 asset_missing。
+
+format_version = 1
+
+out_dir = "out"   # 缺省 "."
+jobs = 4          # 并行工作进程数，缺省 1
+antialias = false # 全局：默认关（1x 快速路径）；true = 4x 覆盖超采样
+
+
+# 1) 最小：只给 id，其余全走数据。
+#    HERO 卡 + hero_style：渲染 PLAY 形态；护甲覆盖成 5。
+[[cards]]
+id = "HERO_01"
+hero_style = true
+armor = 5
+
+
+# 2) 纯数字 = dbf id；默认手牌形态、无覆盖。
+[[cards]]
+id = 8
+
+
+# 3) 字段覆盖：名字 / 描述 / 职业 / 种族 / 数值 / 卡型 / 品质。
+[[cards]]
+id = "CS2_182"
+name = "测试名字"
+desc = """
+测试测试。
+第二行。
+"""
+classes = ["MAGE"]
+races = ["鱼人", "野兽"]     # 任意字符串；按输入顺序逐行；不写种族 tag
+cost = 3
+attack = 4
+health = 5
+cardtype = "MINION"
+rarity = "LEGENDARY"
+premium = "GOLDEN"
+elite = true
+cost_banner = "KABAL"   # 九选一（6 派系 + 3 行动）；NONE 清空；费用区同一槽位，无费用的酒馆卡同样有
+outname = "yeti-custom.png"
+
+
+# 4) 法术 + 双职业 + 学派；outname 显式指定。
+[[cards]]
+id = "CS2_029"
+classes = ["MAGE", "PALADIN"]
+cardtype = "SPELL"
+spell_school = "FIRE"
+outname = "fireball-dual.png"
+
+
+# 5) 武器：耐久走 health（TAG_HEALTH=武器/地标耐久），没有独立的 durability 字段。
+[[cards]]
+id = "CS2_112"
+classes = ["WARRIOR"]
+cardtype = "WEAPON"
+cost = 5
+attack = 5
+health = 2
+outname = "weapon.png"
+
+
+# 6) 符文：三种计数的内联表；缺省键 = 0；{} = 清空；总和 ≤3。
+#    RUNE_BANNER_ROOTS 含 ally/ability/weapon/hero/location 帧，非 DK 卡也能加（自定义用）。
+[[cards]]
+id = "RLK_000"   # 占位：换成真实 DK 卡 id
+runes = { BLOOD = 1, FROST = 2 }
+outname = "runes.png"
+
+
+# 7) 资源替换（供给覆盖，不是 Card 字段）。
+[[cards]]
+id = 105108
+bg_style = true
+tech_level = 3
+
+[cards.asset]
+portrait = "art/105108.png"
+frame = "frames/105108_front.png"
+watermark = "art/wm.png"

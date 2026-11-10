@@ -1,0 +1,82 @@
+# nightly — 自托管 runner 集成回归（任务单 §10 B5）。
+#
+# **runner 预装要求**（不在 workflow 内准备）：
+#   * 标签 `[self-hosted, windows]` 的 Windows 机器；
+#   * 预装炉石客户端（game install root），路径经 secret 注入，值不进仓；
+#   * 可访问外网（setup-python / pip 拉依赖）。若 runner 已预装 3.13，
+#     可删 setup-python 步改用本机解释器。
+#
+# secrets 占位（仓库 Settings → Secrets 配置，值不进仓）：
+#   * EIDOLON_TEST_GAME — 游戏安装根（integration_render_port /
+#                         integration_supply_index 需要；integration_route 不需要）。
+# secret 未配置时对应步骤自动跳过（不硬失败），配置后即生效。
+#
+# 失败通知位：见文件尾注释占位，未接真实 webhook。
+#
+# 注：工作仓尚无 remote，本文件就绪但未实跑（B5 验收声明）。
+
+name: nightly
+
+"on":
+  schedule:
+    - cron: "30 2 * * *" # 每天 UTC 02:30（北京时间 10:30）
+  workflow_dispatch: {} # 手动可跑
+
+permissions:
+  contents: read
+
+env:
+  EIDOLON_TEST_GAME: ${{ secrets.EIDOLON_TEST_GAME }}
+
+jobs:
+  nightly-integration:
+    name: integration (self-hosted)
+    runs-on: [self-hosted, windows]
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      # 自托管首次拉 3.13 需外网；已预装可删除此步（见文件头）。
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      # 与 ci.yml 同选型理由：仓内无 uv.lock，pip editable 安装。
+      - name: install (editable, runtime deps)
+        run: python -m pip install --disable-pip-version-check -e .
+
+      # 快速回归门：默认全量（不需游戏），先绿再进集成。
+      - name: default suite (fast gate)
+        run: python -m unittest discover -s tests -t . -v
+
+      # integration_route：只依赖 UnityPy（fake data_win），不需游戏。
+      - name: integration_route
+        run: python -m unittest discover -s tests/integration -p 'integration_route.py' -t . -v
+
+      # 以下步骤需要游戏装机（secret 未配置时跳过）。
+      - name: integration_render_port (needs game)
+        if: env.EIDOLON_TEST_GAME != ''
+        run: python -m unittest discover -s tests/integration -p 'integration_render_port.py' -t . -v
+
+      - name: integration_supply_index (needs game)
+        if: env.EIDOLON_TEST_GAME != ''
+        run: python -m unittest tests.integration.integration_supply_index -v
+
+      - name: summary (what ran / what was skipped)
+        if: always()
+        run: |
+          echo "EIDOLON_TEST_GAME set: $([ -n "$EIDOLON_TEST_GAME" ] && echo yes || echo no)"
+
+      # ── 失败通知占位（未接真实 webhook；接入时解开并填 secrets）──────────
+      # - name: notify on failure
+      #   if: failure()
+      #   env:
+      #     WEBHOOK_URL: ${{ secrets.NIGHTLY_NOTIFY_WEBHOOK }}
+      #   run: |
+      #     curl -X POST -H 'Content-Type: application/json' \
+      #       -d "{\"text\":\"eidolon nightly failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+      #       "$WEBHOOK_URL"

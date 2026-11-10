@@ -1,0 +1,98 @@
+# ci — PR/push 默认门禁（任务单 §10 B5）。
+#
+# 范围：默认 unittest 全量（tests/ 下 test*.py；tests/integration 与
+# tests/phase0 按文件名约定不进默认 discover）+ wheel 构建 + 干净装冒烟。
+# 集成在 nightly.yml（自托管 runner，需游戏装机）。
+#
+# 包管理事实与选型理由：pyproject.toml 用 setuptools 后端、**仓内无
+# uv.lock**，`uv sync` 的锁定安装语义在本仓不成立；因此安装步骤用
+# `pip install -e .`（装 pyproject 声明的运行时依赖 + 项目本身），
+# setup-python `cache: pip` 以 pyproject 为 key。uv 只用于构建
+# （`uv build --wheel`，AGENTS.md 记录的官方构建命令）。
+#
+# 注：工作仓尚无 remote，本文件就绪但未实跑（B5 验收声明）。
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: default suite (py${{ matrix.python-version }})
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        # windows-latest 默认 pwsh 不做参数 glob；统一 Git Bash 语义。
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        # B5 基准：windows-latest + 3.13，默认只开 3.13。
+        # 3.14 打开即扩；3.11/3.12 受 pyproject `requires-python >= 3.13`
+        # 限制，开门前需先放宽该约束，故只留注释位。
+        python-version: ["3.13"]
+        # python-version: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      # 无 uv.lock（见文件头选型理由）；editable 安装带动 pyproject 运行时依赖。
+      - name: install (editable, runtime deps)
+        run: python -m pip install --disable-pip-version-check -e .
+
+      # 默认全量：不写测试计数断言，语义 = unittest discover 全绿。
+      - name: default test suite
+        run: python -m unittest discover -s tests -t . -v
+
+  wheel:
+    name: wheel build + clean install smoke
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+
+      # AGENTS.md 记录的构建命令；产物进 build/（gitignored）。
+      - name: build wheel
+        run: uv build --wheel --out-dir build/dist
+
+      # 干净装验证：全新 venv 只装 wheel（pip 按 wheel 元数据自动带运行时
+      # 依赖，不带任何 dev 依赖——本仓无 dev extras，等价于“只装 wheel 面”）。
+      - name: clean venv + install wheel only
+        run: |
+          python -m venv build/clean-venv
+          build/clean-venv/Scripts/python.exe -m pip install --disable-pip-version-check build/dist/eidolon-*.whl
+
+      # 冒烟在仓外 cwd 跑，确保 import 的是装进 venv 的 wheel，不是源码树。
+      - name: smoke (import + CLI + runtime deps, outside source tree)
+        working-directory: ${{ runner.temp }}
+        env:
+          VENV_PY: ${{ github.workspace }}/build/clean-venv/Scripts/python.exe
+        run: |
+          "$VENV_PY" -c "import eidolon; print('eidolon', eidolon.__version__)"
+          "$VENV_PY" -m eidolon --help
+          "$VENV_PY" -c "import importlib.metadata as m; deps=['unitypy','pillow','numpy','scipy','fonttools','freetype-py','texture2ddecoder','pythonnet']; [print(d, m.version(d)) for d in deps]"
